@@ -15,6 +15,8 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NewSaleInvoice from "./pages/NewSaleInvoice";
 import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
+import SaleInvoiceDetail from "./pages/SaleInvoiceDetail";
+import EditSaleInvoice from "./pages/EditSaleInvoice";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/sales" element={<Sales />} />
             <Route path="/sales/new" element={<NewSaleInvoice />} />
+            <Route path="/sales/:id" element={<SaleInvoiceDetail />} />
+            <Route path="/sales/:id/edit" element={<EditSaleInvoice />} />
             <Route path="/purchases" element={<Purchases />} />
             <Route path="/purchases/new" element={<NewPurchaseInvoice />} />
             <Route path="/cash" element={<Cash />} />

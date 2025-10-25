@@ -52,15 +52,11 @@ const Sales = () => {
             throw new Error("Invoice not found");
           }
 
-          // 1. Revert customer balance (Decrease what they owe us)
           await db.customers.update(invoiceToDelete.customerId, {
             balance: db.customers.get(invoiceToDelete.customerId).then(c => (c?.balance || 0) - invoiceToDelete.total)
           });
 
-          // 2. Delete invoice items
           await db.saleInvoiceItems.where({ invoiceId: invoiceId }).delete();
-
-          // 3. Delete invoice
           await db.saleInvoices.delete(invoiceId);
         });
         showSuccess("تم حذف الفاتورة بنجاح.");
@@ -111,7 +107,9 @@ const Sales = () => {
                   salesData.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">
-                        INV-{invoice.id?.toString().padStart(3, "0")}
+                        <Link to={`/sales/${invoice.id}`} className="hover:underline">
+                          INV-{invoice.id?.toString().padStart(3, "0")}
+                        </Link>
                       </TableCell>
                       <TableCell>{invoice.customerName}</TableCell>
                       <TableCell>
@@ -122,11 +120,9 @@ const Sales = () => {
                           variant={
                             invoice.status === "مدفوعة"
                               ? "default"
-                              : invoice.status === "غير مدفوعة"
-                              ? "secondary"
-                              : "destructive"
+                              : "secondary"
                           }
-                          className={
+                           className={
                             invoice.status === "مدفوعة"
                               ? "bg-green-600 text-white hover:bg-green-700"
                               : ""
@@ -152,8 +148,12 @@ const Sales = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                            <DropdownMenuItem>عرض</DropdownMenuItem>
-                            <DropdownMenuItem>تعديل</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/sales/${invoice.id}`}>عرض</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/sales/${invoice.id}/edit`}>تعديل</Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => handleDeleteInvoice(invoice.id)}
