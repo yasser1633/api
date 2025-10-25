@@ -32,6 +32,22 @@ export interface SaleInvoiceItem {
   price: number;
 }
 
+export interface PurchaseInvoice {
+  id?: number;
+  supplierId: number;
+  invoiceDate: Date;
+  total: number;
+  status: 'مدفوعة' | 'غير مدفوعة' | 'متأخرة';
+}
+
+export interface PurchaseInvoiceItem {
+  id?: number;
+  invoiceId: number;
+  description: string;
+  quantity: number;
+  price: number;
+}
+
 export interface CashTransaction {
   id?: number;
   transactionDate: Date;
@@ -48,6 +64,8 @@ export class AppDatabase extends Dexie {
   suppliers!: Table<Supplier>;
   saleInvoices!: Table<SaleInvoice>;
   saleInvoiceItems!: Table<SaleInvoiceItem>;
+  purchaseInvoices!: Table<PurchaseInvoice>;
+  purchaseInvoiceItems!: Table<PurchaseInvoiceItem>;
   cashTransactions!: Table<CashTransaction>;
 
   constructor() {
@@ -64,10 +82,15 @@ export class AppDatabase extends Dexie {
       saleInvoices: '++id, customerId, invoiceDate',
       saleInvoiceItems: '++id, invoiceId',
       cashTransactions: '++id, transactionDate, type',
-    }).upgrade(tx => {
-      // This upgrade function is needed for Dexie v3+ when adding tables to an existing db.
-      // It can be empty if we're just adding a new table.
-      return tx.table("cashTransactions").count();
+    });
+    this.version(3).stores({
+      customers: '++id, name',
+      suppliers: '++id, name',
+      saleInvoices: '++id, customerId, invoiceDate',
+      saleInvoiceItems: '++id, invoiceId',
+      cashTransactions: '++id, transactionDate, type',
+      purchaseInvoices: '++id, supplierId, invoiceDate',
+      purchaseInvoiceItems: '++id, invoiceId',
     });
   }
 }
