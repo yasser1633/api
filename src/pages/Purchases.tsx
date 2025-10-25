@@ -107,7 +107,9 @@ const Purchases = () => {
                   purchasesData.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">
-                        PUR-{invoice.id?.toString().padStart(3, "0")}
+                        <Link to={`/purchases/${invoice.id}`} className="hover:underline">
+                          PUR-{invoice.id?.toString().padStart(3, "0")}
+                        </Link>
                       </TableCell>
                       <TableCell>{invoice.supplierName}</TableCell>
                       <TableCell>
@@ -146,8 +148,12 @@ const Purchases = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                            <DropdownMenuItem>عرض</DropdownMenuItem>
-                            <DropdownMenuItem>تعديل</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/purchases/${invoice.id}`}>عرض</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/purchases/${invoice.id}/edit`}>تعديل</Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => handleDeleteInvoice(invoice.id)}
