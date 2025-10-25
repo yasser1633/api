@@ -114,6 +114,7 @@ const NewSaleInvoice = () => {
             invoiceDate: invoiceDate,
             total: total,
             status: "غير مدفوعة",
+            paidAmount: 0,
           });
 
           // 2. Add SaleInvoiceItems

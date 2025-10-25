@@ -54,6 +54,7 @@ const PurchaseInvoiceDetail = () => {
   const { invoice, supplier, items } = invoiceData;
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const tax = invoice.total - subtotal;
+  const amountDue = invoice.total - invoice.paidAmount;
 
   return (
     <div className="flex flex-col gap-4">
@@ -140,7 +141,7 @@ const PurchaseInvoiceDetail = () => {
           <CardFooter className="flex flex-row items-center border-t bg-muted/50 px-6 py-3">
             <div className="w-full text-sm text-muted-foreground">
               <div className="flex justify-end gap-4">
-                <div className="w-40 space-y-2">
+                <div className="w-48 space-y-2">
                   <div className="flex justify-between">
                     <span>المجموع الفرعي:</span>
                     <span>{subtotal.toFixed(2)} ر.س</span>
@@ -153,6 +154,14 @@ const PurchaseInvoiceDetail = () => {
                   <div className="flex justify-between font-semibold text-foreground">
                     <span>الإجمالي:</span>
                     <span>{invoice.total.toFixed(2)} ر.س</span>
+                  </div>
+                   <div className="flex justify-between">
+                    <span>المدفوع:</span>
+                    <span>{invoice.paidAmount.toFixed(2)} ر.س</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-red-600">
+                    <span>المتبقي:</span>
+                    <span>{amountDue.toFixed(2)} ر.س</span>
                   </div>
                 </div>
               </div>

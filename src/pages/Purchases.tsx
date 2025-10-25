@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { format } from "date-fns";
@@ -29,8 +30,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, Loader2 } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
+import RecordPaymentDialog from "@/components/RecordPaymentDialog";
 
 const Purchases = () => {
+  const [paymentInvoice, setPaymentInvoice] = React.useState(null);
+
   const purchasesData = useLiveQuery(async () => {
     const invoices = await db.purchaseInvoices.orderBy("invoiceDate").reverse().toArray();
     const suppliers = await db.suppliers.toArray();
@@ -67,42 +71,10 @@ const Purchases = () => {
     }
   };
 
-  const handleRecordPayment = async (invoice) => {
-    if (!invoice.id || !invoice.supplierId) return;
-
-    if (confirm(`هل تريد تسجيل دفعة بقيمة ${invoice.total.toFixed(2)} ر.س لهذه الفاتورة؟ سيتم إنشاء حركة صندوق وتحديث حالة الفاتورة.`)) {
-      try {
-        await db.transaction('rw', db.purchaseInvoices, db.cashTransactions, db.suppliers, async () => {
-          const currentInvoice = await db.purchaseInvoices.get(invoice.id);
-          if (currentInvoice?.status === 'مدفوعة') {
-            throw new Error("الفاتورة مدفوعة بالفعل.");
-          }
-
-          await db.purchaseInvoices.update(invoice.id, { status: 'مدفوعة' });
-
-          const supplier = await db.suppliers.get(invoice.supplierId);
-          if (!supplier) throw new Error("Supplier not found");
-
-          await db.suppliers.update(invoice.supplierId, {
-            balance: supplier.balance - invoice.total
-          });
-
-          await db.cashTransactions.add({
-            transactionDate: new Date(),
-            type: 'out',
-            amount: invoice.total,
-            description: `دفعة للفاتورة رقم PUR-${invoice.id?.toString().padStart(3, '0')}`,
-            partyType: 'supplier',
-            partyId: invoice.supplierId,
-            partyName: supplier.name,
-          });
-        });
-        showSuccess("تم تسجيل الدفعة بنجاح.");
-      } catch (error) {
-        console.error("Failed to record payment:", error);
-        showError(error.message || "حدث خطأ أثناء تسجيل الدفعة.");
-      }
-    }
+  const getStatusVariant = (status) => {
+    if (status === 'مدفوعة') return 'success';
+    if (status === 'مدفوعة جزئياً') return 'warning';
+    return 'secondary';
   };
 
   return (
@@ -155,14 +127,12 @@ const Purchases = () => {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={
-                            invoice.status === "مدفوعة"
-                              ? "default"
-                              : "secondary"
-                          }
+                          variant={getStatusVariant(invoice.status)}
                            className={
                             invoice.status === "مدفوعة"
                               ? "bg-green-600 text-white hover:bg-green-700"
+                              : invoice.status === "مدفوعة جزئياً"
+                              ? "bg-yellow-400 text-black hover:bg-yellow-500"
                               : ""
                           }
                         >
@@ -193,7 +163,7 @@ const Purchases = () => {
                               <Link to={`/purchases/${invoice.id}/edit`}>تعديل</Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleRecordPayment(invoice)}
+                              onClick={() => setPaymentInvoice(invoice)}
                               disabled={invoice.status === 'مدفوعة'}
                             >
                               تسجيل دفعة
@@ -227,6 +197,12 @@ const Purchases = () => {
           </Table>
         </CardContent>
       </Card>
+      <RecordPaymentDialog 
+        invoice={paymentInvoice}
+        invoiceType="purchase"
+        isOpen={!!paymentInvoice}
+        onClose={() => setPaymentInvoice(null)}
+      />
     </div>
   );
 };

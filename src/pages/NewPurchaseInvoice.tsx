@@ -113,6 +113,7 @@ const NewPurchaseInvoice = () => {
             invoiceDate: invoiceDate,
             total: total,
             status: "غير مدفوعة",
+            paidAmount: 0,
           });
 
           const invoiceItems = items.map((item) => ({

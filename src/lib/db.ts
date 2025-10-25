@@ -21,7 +21,8 @@ export interface SaleInvoice {
   customerId: number;
   invoiceDate: Date;
   total: number;
-  status: 'مدفوعة' | 'غير مدفوعة' | 'متأخرة';
+  status: 'مدفوعة' | 'غير مدفوعة' | 'متأخرة' | 'مدفوعة جزئياً';
+  paidAmount: number;
 }
 
 export interface SaleInvoiceItem {
@@ -37,7 +38,8 @@ export interface PurchaseInvoice {
   supplierId: number;
   invoiceDate: Date;
   total: number;
-  status: 'مدفوعة' | 'غير مدفوعة' | 'متأخرة';
+  status: 'مدفوعة' | 'غير مدفوعة' | 'متأخرة' | 'مدفوعة جزئياً';
+  paidAmount: number;
 }
 
 export interface PurchaseInvoiceItem {
@@ -109,6 +111,27 @@ export class AppDatabase extends Dexie {
       purchaseInvoices: '++id, supplierId, invoiceDate',
       purchaseInvoiceItems: '++id, invoiceId',
       appSettings: 'id',
+    });
+    this.version(5).stores({
+      customers: '++id, name',
+      suppliers: '++id, name',
+      saleInvoices: '++id, customerId, invoiceDate, status',
+      saleInvoiceItems: '++id, invoiceId',
+      purchaseInvoices: '++id, supplierId, invoiceDate, status',
+      purchaseInvoiceItems: '++id, invoiceId',
+      cashTransactions: '++id, transactionDate, type',
+      appSettings: 'id',
+    }).upgrade(tx => {
+        tx.table('saleInvoices').toCollection().modify(inv => {
+            if (inv.paidAmount === undefined) {
+                inv.paidAmount = inv.status === 'مدفوعة' ? inv.total : 0;
+            }
+        });
+        tx.table('purchaseInvoices').toCollection().modify(inv => {
+            if (inv.paidAmount === undefined) {
+                inv.paidAmount = inv.status === 'مدفوعة' ? inv.total : 0;
+            }
+        });
     });
   }
 }
