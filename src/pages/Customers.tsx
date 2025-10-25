@@ -80,9 +80,9 @@ const Customers = () => {
                       <TableCell
                         className={`text-left font-semibold ${
                           customer.balance > 0
-                            ? "text-green-600"
-                            : customer.balance < 0
                             ? "text-red-600"
+                            : customer.balance < 0
+                            ? "text-green-600"
                             : ""
                         }`}
                       >

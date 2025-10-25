@@ -79,7 +79,11 @@ const Suppliers = () => {
                       <TableCell>{supplier.phone}</TableCell>
                       <TableCell
                         className={`text-left font-semibold ${
-                          supplier.balance < 0 ? "text-red-600" : ""
+                          supplier.balance > 0
+                            ? "text-red-600"
+                            : supplier.balance < 0
+                            ? "text-green-600"
+                            : ""
                         }`}
                       >
                         {supplier.balance.toFixed(2)}

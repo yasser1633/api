@@ -57,36 +57,40 @@ const AddCashTransactionDialog = () => {
       return;
     }
 
-    const selectedParty = partyType === 'customer'
-      ? customers?.find(c => c.id === parseInt(partyId))
-      : suppliers?.find(s => s.id === parseInt(partyId));
-
-    if (!selectedParty) {
-      showError("لم يتم العثور على الطرف المحدد.");
-      return;
-    }
+    const selectedPartyId = parseInt(partyId);
 
     try {
       await db.transaction('rw', db.cashTransactions, db.customers, db.suppliers, async () => {
-        // 1. Add cash transaction
+        let partyName = "";
+        
+        // Update balance and get party name
+        if (partyType === 'customer') {
+          const customer = await db.customers.get(selectedPartyId);
+          if (!customer) throw new Error("Customer not found");
+          partyName = customer.name;
+          const newBalance = type === 'in' 
+            ? customer.balance - numericAmount // Payment from customer decreases their debt
+            : customer.balance + numericAmount; // Refund to customer increases their debt
+          await db.customers.update(selectedPartyId, { balance: newBalance });
+        } else { // supplier
+          const supplier = await db.suppliers.get(selectedPartyId);
+          if (!supplier) throw new Error("Supplier not found");
+          partyName = supplier.name;
+          // For suppliers, both payments and refunds decrease what we owe them.
+          const newBalance = supplier.balance - numericAmount;
+          await db.suppliers.update(selectedPartyId, { balance: newBalance });
+        }
+
+        // Add cash transaction
         await db.cashTransactions.add({
           transactionDate,
           type,
           amount: numericAmount,
           description,
           partyType,
-          partyId: selectedParty.id,
-          partyName: selectedParty.name,
+          partyId: selectedPartyId,
+          partyName: partyName,
         });
-
-        // 2. Update balance
-        if (partyType === 'customer') {
-          const balanceUpdate = type === 'in' ? numericAmount : -numericAmount;
-          await db.customers.update(selectedParty.id!, { balance: selectedParty.balance + balanceUpdate });
-        } else { // supplier
-          const balanceUpdate = type === 'out' ? numericAmount : -numericAmount;
-          await db.suppliers.update(selectedParty.id!, { balance: selectedParty.balance - balanceUpdate });
-        }
       });
 
       showSuccess("تمت إضافة المعاملة بنجاح!");

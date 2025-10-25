@@ -125,9 +125,9 @@ const NewSaleInvoice = () => {
           }));
           await db.saleInvoiceItems.bulkAdd(invoiceItems);
 
-          // 3. Update customer balance
+          // 3. Update customer balance (Increase what they owe us)
           await db.customers.update(selectedCustomerId, {
-            balance: db.customers.get(selectedCustomerId).then(c => (c?.balance || 0) - total)
+            balance: db.customers.get(selectedCustomerId).then(c => (c?.balance || 0) + total)
           });
         }
       );

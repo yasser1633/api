@@ -52,9 +52,9 @@ const Sales = () => {
             throw new Error("Invoice not found");
           }
 
-          // 1. Revert customer balance
+          // 1. Revert customer balance (Decrease what they owe us)
           await db.customers.update(invoiceToDelete.customerId, {
-            balance: db.customers.get(invoiceToDelete.customerId).then(c => (c?.balance || 0) + invoiceToDelete.total)
+            balance: db.customers.get(invoiceToDelete.customerId).then(c => (c?.balance || 0) - invoiceToDelete.total)
           });
 
           // 2. Delete invoice items
