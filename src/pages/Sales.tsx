@@ -67,6 +67,44 @@ const Sales = () => {
     }
   };
 
+  const handleRecordPayment = async (invoice) => {
+    if (!invoice.id || !invoice.customerId) return;
+
+    if (confirm(`هل تريد تسجيل دفعة بقيمة ${invoice.total.toFixed(2)} ر.س لهذه الفاتورة؟ سيتم إنشاء حركة صندوق وتحديث حالة الفاتورة.`)) {
+      try {
+        await db.transaction('rw', db.saleInvoices, db.cashTransactions, db.customers, async () => {
+          const currentInvoice = await db.saleInvoices.get(invoice.id);
+          if (currentInvoice?.status === 'مدفوعة') {
+            throw new Error("الفاتورة مدفوعة بالفعل.");
+          }
+
+          await db.saleInvoices.update(invoice.id, { status: 'مدفوعة' });
+
+          const customer = await db.customers.get(invoice.customerId);
+          if (!customer) throw new Error("Customer not found");
+
+          await db.customers.update(invoice.customerId, {
+            balance: customer.balance - invoice.total
+          });
+
+          await db.cashTransactions.add({
+            transactionDate: new Date(),
+            type: 'in',
+            amount: invoice.total,
+            description: `دفعة للفاتورة رقم INV-${invoice.id?.toString().padStart(3, '0')}`,
+            partyType: 'customer',
+            partyId: invoice.customerId,
+            partyName: customer.name,
+          });
+        });
+        showSuccess("تم تسجيل الدفعة بنجاح.");
+      } catch (error) {
+        console.error("Failed to record payment:", error);
+        showError(error.message || "حدث خطأ أثناء تسجيل الدفعة.");
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -153,6 +191,12 @@ const Sales = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to={`/sales/${invoice.id}/edit`}>تعديل</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleRecordPayment(invoice)}
+                              disabled={invoice.status === 'مدفوعة'}
+                            >
+                              تسجيل دفعة
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
