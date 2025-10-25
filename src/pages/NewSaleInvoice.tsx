@@ -1,11 +1,11 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
 import { ChevronLeft, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -29,14 +29,8 @@ import {
 } from "@/components/ui/table";
 import { DatePicker } from "@/components/DatePicker";
 import { Separator } from "@/components/ui/separator";
-
-// بيانات مؤقتة للعملاء، سيتم استبدالها لاحقاً
-const customers = [
-  { id: "1", name: "أحمد محمد" },
-  { id: "2", name: "فاطمة علي" },
-  { id: "3", name: "خالد عبدالله" },
-  { id: "4", name: "سارة حسين" },
-];
+import { db } from "@/lib/db";
+import { showError, showSuccess } from "@/utils/toast";
 
 interface InvoiceItem {
   id: number;
@@ -47,6 +41,11 @@ interface InvoiceItem {
 
 const NewSaleInvoice = () => {
   const navigate = useNavigate();
+  const customers = useLiveQuery(() => db.customers.toArray());
+
+  const [selectedCustomerId, setSelectedCustomerId] = React.useState<
+    number | undefined
+  >();
   const [items, setItems] = React.useState<InvoiceItem[]>([
     { id: 1, description: "", quantity: 1, price: 0 },
   ]);
@@ -88,6 +87,59 @@ const NewSaleInvoice = () => {
   const tax = subtotal * 0.15; // ضريبة القيمة المضافة ١٥٪
   const total = subtotal + tax;
 
+  const handleSaveInvoice = async () => {
+    if (!selectedCustomerId) {
+      showError("الرجاء اختيار عميل.");
+      return;
+    }
+    if (!invoiceDate) {
+      showError("الرجاء تحديد تاريخ الفاتورة.");
+      return;
+    }
+    if (items.some((item) => !item.description.trim() || item.quantity <= 0)) {
+      showError("الرجاء ملء جميع بنود الفاتورة بشكل صحيح.");
+      return;
+    }
+
+    try {
+      await db.transaction(
+        "rw",
+        db.saleInvoices,
+        db.saleInvoiceItems,
+        db.customers,
+        async () => {
+          // 1. Add SaleInvoice
+          const invoiceId = await db.saleInvoices.add({
+            customerId: selectedCustomerId,
+            invoiceDate: invoiceDate,
+            total: total,
+            status: "غير مدفوعة",
+          });
+
+          // 2. Add SaleInvoiceItems
+          const invoiceItems = items.map((item) => ({
+            invoiceId: invoiceId,
+            description: item.description,
+            quantity: item.quantity,
+            price: item.price,
+          }));
+          await db.saleInvoiceItems.bulkAdd(invoiceItems);
+
+          // 3. Update customer balance
+          await db.customers.update(selectedCustomerId, {
+            balance: db.customers.get(selectedCustomerId).then(c => (c?.balance || 0) - total)
+          });
+        }
+      );
+
+      showSuccess("تم حفظ الفاتورة بنجاح!");
+      navigate("/sales");
+    } catch (error) {
+      console.error("Failed to save invoice:", error);
+      showError("حدث خطأ أثناء حفظ الفاتورة.");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
@@ -111,7 +163,9 @@ const NewSaleInvoice = () => {
           >
             إلغاء
           </Button>
-          <Button size="sm">حفظ الفاتورة</Button>
+          <Button size="sm" onClick={handleSaveInvoice}>
+            حفظ الفاتورة
+          </Button>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
@@ -123,13 +177,17 @@ const NewSaleInvoice = () => {
             <CardContent className="grid gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="customer">العميل</Label>
-                <Select>
+                <Select
+                  onValueChange={(value) =>
+                    setSelectedCustomerId(parseInt(value))
+                  }
+                >
                   <SelectTrigger id="customer" aria-label="اختر العميل">
                     <SelectValue placeholder="اختر العميل" />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.name}>
+                    {customers?.map((c) => (
+                      <SelectItem key={c.id} value={c.id!.toString()}>
                         {c.name}
                       </SelectItem>
                     ))}
@@ -266,7 +324,9 @@ const NewSaleInvoice = () => {
         <Button variant="outline" size="sm" onClick={() => navigate("/sales")}>
           إلغاء
         </Button>
-        <Button size="sm">حفظ الفاتورة</Button>
+        <Button size="sm" onClick={handleSaveInvoice}>
+          حفظ الفاتورة
+        </Button>
       </div>
     </div>
   );
