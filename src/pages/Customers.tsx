@@ -1,5 +1,6 @@
+import * as React from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, Customer } from "@/lib/db";
 import {
   Card,
   CardContent,
@@ -25,10 +26,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Loader2 } from "lucide-react";
 import AddCustomerDialog from "@/components/AddCustomerDialog";
+import EditCustomerDialog from "@/components/EditCustomerDialog";
 import { showError, showSuccess } from "@/utils/toast";
 
 const Customers = () => {
   const customers = useLiveQuery(() => db.customers.toArray());
+  const [editingCustomer, setEditingCustomer] = React.useState<Customer | null>(null);
 
   const handleDeleteCustomer = async (id: number | undefined) => {
     if (!id) return;
@@ -102,7 +105,9 @@ const Customers = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                            <DropdownMenuItem>تعديل</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditingCustomer(customer)}>
+                              تعديل
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => handleDeleteCustomer(customer.id)}
@@ -132,6 +137,13 @@ const Customers = () => {
           </Table>
         </CardContent>
       </Card>
+      {editingCustomer && (
+        <EditCustomerDialog
+          customer={editingCustomer}
+          isOpen={!!editingCustomer}
+          onClose={() => setEditingCustomer(null)}
+        />
+      )}
     </div>
   );
 };

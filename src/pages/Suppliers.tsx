@@ -1,5 +1,6 @@
+import * as React from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { db, Supplier } from "@/lib/db";
 import {
   Card,
   CardContent,
@@ -25,10 +26,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Loader2 } from "lucide-react";
 import AddSupplierDialog from "@/components/AddSupplierDialog";
+import EditSupplierDialog from "@/components/EditSupplierDialog";
 import { showError, showSuccess } from "@/utils/toast";
 
 const Suppliers = () => {
   const suppliers = useLiveQuery(() => db.suppliers.toArray());
+  const [editingSupplier, setEditingSupplier] = React.useState<Supplier | null>(null);
 
   const handleDeleteSupplier = async (id: number | undefined) => {
     if (!id) return;
@@ -102,7 +105,9 @@ const Suppliers = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                            <DropdownMenuItem>تعديل</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
+                              تعديل
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => handleDeleteSupplier(supplier.id)}
@@ -132,6 +137,13 @@ const Suppliers = () => {
           </Table>
         </CardContent>
       </Card>
+      {editingSupplier && (
+        <EditSupplierDialog
+          supplier={editingSupplier}
+          isOpen={!!editingSupplier}
+          onClose={() => setEditingSupplier(null)}
+        />
+      )}
     </div>
   );
 };
