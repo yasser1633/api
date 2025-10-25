@@ -1,3 +1,5 @@
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/db";
 import {
   Card,
   CardContent,
@@ -21,35 +23,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Loader2 } from "lucide-react";
 import AddSupplierDialog from "@/components/AddSupplierDialog";
-
-// بيانات مؤقتة للموردين
-const suppliers = [
-  {
-    id: "1",
-    name: "شركة التوريدات الحديثة",
-    email: "contact@modern-supplies.com",
-    phone: "0112345678",
-    balance: -5000.0,
-  },
-  {
-    id: "2",
-    name: "مؤسسة الأجهزة المتطورة",
-    email: "info@advanced-hw.com",
-    phone: "0128765432",
-    balance: -12500.5,
-  },
-  {
-    id: "3",
-    name: "مكتبة المعرفة",
-    email: "sales@knowledge-lib.com",
-    phone: "0133456789",
-    balance: 0.0,
-  },
-];
+import { showError, showSuccess } from "@/utils/toast";
 
 const Suppliers = () => {
+  const suppliers = useLiveQuery(() => db.suppliers.toArray());
+
+  const handleDeleteSupplier = async (id: number | undefined) => {
+    if (!id) return;
+    if (confirm("هل أنت متأكد من أنك تريد حذف هذا المورد؟")) {
+      try {
+        await db.suppliers.delete(id);
+        showSuccess("تم حذف المورد بنجاح.");
+      } catch (error) {
+        console.error("Failed to delete supplier:", error);
+        showError("حدث خطأ أثناء حذف المورد.");
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -75,37 +68,62 @@ const Suppliers = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {suppliers.map((supplier) => (
-                <TableRow key={supplier.id}>
-                  <TableCell className="font-medium">{supplier.name}</TableCell>
-                  <TableCell>{supplier.email}</TableCell>
-                  <TableCell>{supplier.phone}</TableCell>
-                  <TableCell
-                    className={`text-left font-semibold ${
-                      supplier.balance < 0 ? "text-red-600" : ""
-                    }`}
-                  >
-                    {supplier.balance.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem>تعديل</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          حذف
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {suppliers ? (
+                suppliers.length > 0 ? (
+                  suppliers.map((supplier) => (
+                    <TableRow key={supplier.id}>
+                      <TableCell className="font-medium">
+                        {supplier.name}
+                      </TableCell>
+                      <TableCell>{supplier.email}</TableCell>
+                      <TableCell>{supplier.phone}</TableCell>
+                      <TableCell
+                        className={`text-left font-semibold ${
+                          supplier.balance < 0 ? "text-red-600" : ""
+                        }`}
+                      >
+                        {supplier.balance.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                            <DropdownMenuItem>تعديل</DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteSupplier(supplier.id)}
+                            >
+                              حذف
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      لا يوجد موردين. ابدأ بإضافة مورد جديد.
+                    </TableCell>
+                  </TableRow>
+                )
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,15 +8,46 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusCircle } from "lucide-react";
+import { db } from "@/lib/db";
+import { showSuccess, showError } from "@/utils/toast";
 
 const AddSupplierDialog = () => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      showError("اسم المورد مطلوب.");
+      return;
+    }
+
+    try {
+      await db.suppliers.add({
+        name,
+        email,
+        phone,
+        balance: 0,
+      });
+      showSuccess("تمت إضافة المورد بنجاح!");
+      // Reset form
+      setName("");
+      setEmail("");
+      setPhone("");
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Failed to add supplier:", error);
+      showError("حدث خطأ أثناء إضافة المورد.");
+    }
+  };
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="h-8 gap-1">
           <PlusCircle className="h-3.5 w-3.5" />
@@ -38,6 +70,8 @@ const AddSupplierDialog = () => {
             </Label>
             <Input
               id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="شركة التوريدات الحديثة"
               className="col-span-3"
             />
@@ -49,6 +83,8 @@ const AddSupplierDialog = () => {
             <Input
               id="email"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="contact@example.com"
               className="col-span-3"
             />
@@ -59,16 +95,20 @@ const AddSupplierDialog = () => {
             </Label>
             <Input
               id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               placeholder="0112345678"
               className="col-span-3"
             />
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">إلغاء</Button>
-          </DialogClose>
-          <Button type="submit">حفظ</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            إلغاء
+          </Button>
+          <Button type="submit" onClick={handleSubmit}>
+            حفظ
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
