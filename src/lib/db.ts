@@ -32,19 +32,42 @@ export interface SaleInvoiceItem {
   price: number;
 }
 
+export interface CashTransaction {
+  id?: number;
+  transactionDate: Date;
+  type: 'in' | 'out';
+  amount: number;
+  description: string;
+  partyType?: 'customer' | 'supplier';
+  partyId?: number;
+  partyName?: string;
+}
+
 export class AppDatabase extends Dexie {
   customers!: Table<Customer>;
   suppliers!: Table<Supplier>;
   saleInvoices!: Table<SaleInvoice>;
   saleInvoiceItems!: Table<SaleInvoiceItem>;
+  cashTransactions!: Table<CashTransaction>;
 
   constructor() {
     super('AccountingAppDB');
     this.version(1).stores({
-      customers: '++id, name', // ++id is auto-incrementing primary key, name is indexed
+      customers: '++id, name',
       suppliers: '++id, name',
       saleInvoices: '++id, customerId, invoiceDate',
       saleInvoiceItems: '++id, invoiceId',
+    });
+    this.version(2).stores({
+      customers: '++id, name',
+      suppliers: '++id, name',
+      saleInvoices: '++id, customerId, invoiceDate',
+      saleInvoiceItems: '++id, invoiceId',
+      cashTransactions: '++id, transactionDate, type',
+    }).upgrade(tx => {
+      // This upgrade function is needed for Dexie v3+ when adding tables to an existing db.
+      // It can be empty if we're just adding a new table.
+      return tx.table("cashTransactions").count();
     });
   }
 }
