@@ -1,4 +1,8 @@
 import { Link } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import { format } from "date-fns";
+import { arSA } from "date-fns/locale";
+import { db } from "@/lib/db";
 import {
   Card,
   CardContent,
@@ -23,41 +27,50 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
-
-// بيانات مؤقتة لفواتير المبيعات
-const invoices = [
-  {
-    id: "INV001",
-    customer: "أحمد محمد",
-    date: "2023-10-26",
-    total: 250.0,
-    status: "مدفوعة",
-  },
-  {
-    id: "INV002",
-    customer: "فاطمة علي",
-    date: "2023-10-25",
-    total: 150.0,
-    status: "غير مدفوعة",
-  },
-  {
-    id: "INV003",
-    customer: "خالد عبدالله",
-    date: "2023-10-24",
-    total: 350.0,
-    status: "مدفوعة",
-  },
-  {
-    id: "INV004",
-    customer: "سارة حسين",
-    date: "2023-10-23",
-    total: 450.0,
-    status: "متأخرة",
-  },
-];
+import { MoreHorizontal, PlusCircle, Loader2 } from "lucide-react";
+import { showError, showSuccess } from "@/utils/toast";
 
 const Sales = () => {
+  const salesData = useLiveQuery(async () => {
+    const invoices = await db.saleInvoices.orderBy("invoiceDate").reverse().toArray();
+    const customers = await db.customers.toArray();
+    const customersMap = new Map(customers.map((c) => [c.id, c.name]));
+
+    return invoices.map((invoice) => ({
+      ...invoice,
+      customerName: customersMap.get(invoice.customerId) || "عميل محذوف",
+    }));
+  }, []);
+
+  const handleDeleteInvoice = async (invoiceId: number | undefined) => {
+    if (!invoiceId) return;
+    if (confirm("هل أنت متأكد من حذف هذه الفاتورة؟ سيتم تحديث رصيد العميل.")) {
+      try {
+        await db.transaction("rw", db.saleInvoices, db.saleInvoiceItems, db.customers, async () => {
+          const invoiceToDelete = await db.saleInvoices.get(invoiceId);
+          if (!invoiceToDelete) {
+            throw new Error("Invoice not found");
+          }
+
+          // 1. Revert customer balance
+          await db.customers.update(invoiceToDelete.customerId, {
+            balance: db.customers.get(invoiceToDelete.customerId).then(c => (c?.balance || 0) + invoiceToDelete.total)
+          });
+
+          // 2. Delete invoice items
+          await db.saleInvoiceItems.where({ invoiceId: invoiceId }).delete();
+
+          // 3. Delete invoice
+          await db.saleInvoices.delete(invoiceId);
+        });
+        showSuccess("تم حذف الفاتورة بنجاح.");
+      } catch (error) {
+        console.error("Failed to delete invoice:", error);
+        showError("حدث خطأ أثناء حذف الفاتورة.");
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -93,52 +106,79 @@ const Sales = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{invoice.customer}</TableCell>
-                  <TableCell>{invoice.date}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        invoice.status === "مدفوعة"
-                          ? "default"
-                          : invoice.status === "غير مدفوعة"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                      className={
-                        invoice.status === "مدفوعة"
-                          ? "bg-green-600 text-white hover:bg-green-700"
-                          : ""
-                      }
-                    >
-                      {invoice.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-left">
-                    {invoice.total.toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                        <DropdownMenuItem>عرض</DropdownMenuItem>
-                        <DropdownMenuItem>تعديل</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          حذف
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {salesData ? (
+                salesData.length > 0 ? (
+                  salesData.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell className="font-medium">
+                        INV-{invoice.id?.toString().padStart(3, "0")}
+                      </TableCell>
+                      <TableCell>{invoice.customerName}</TableCell>
+                      <TableCell>
+                        {format(invoice.invoiceDate, "PPP", { locale: arSA })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            invoice.status === "مدفوعة"
+                              ? "default"
+                              : invoice.status === "غير مدفوعة"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                          className={
+                            invoice.status === "مدفوعة"
+                              ? "bg-green-600 text-white hover:bg-green-700"
+                              : ""
+                          }
+                        >
+                          {invoice.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-left">
+                        {invoice.total.toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                            <DropdownMenuItem>عرض</DropdownMenuItem>
+                            <DropdownMenuItem>تعديل</DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDeleteInvoice(invoice.id)}
+                            >
+                              حذف
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      لا يوجد فواتير. ابدأ بإضافة فاتورة جديدة.
+                    </TableCell>
+                  </TableRow>
+                )
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
