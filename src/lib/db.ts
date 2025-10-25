@@ -133,6 +133,16 @@ export class AppDatabase extends Dexie {
             }
         });
     });
+    this.version(6).stores({
+      customers: '++id, name, balance',
+      suppliers: '++id, name, balance',
+      saleInvoices: '++id, customerId, invoiceDate, status',
+      saleInvoiceItems: '++id, invoiceId',
+      purchaseInvoices: '++id, supplierId, invoiceDate, status',
+      purchaseInvoiceItems: '++id, invoiceId',
+      cashTransactions: '++id, transactionDate, type',
+      appSettings: 'id',
+    });
   }
 }
 
