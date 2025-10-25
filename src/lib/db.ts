@@ -59,6 +59,13 @@ export interface CashTransaction {
   partyName?: string;
 }
 
+export interface AppSettings {
+  id?: number; // Will always be 1
+  companyName: string;
+  companyAddress: string;
+  taxNumber: string;
+}
+
 export class AppDatabase extends Dexie {
   customers!: Table<Customer>;
   suppliers!: Table<Supplier>;
@@ -67,6 +74,7 @@ export class AppDatabase extends Dexie {
   purchaseInvoices!: Table<PurchaseInvoice>;
   purchaseInvoiceItems!: Table<PurchaseInvoiceItem>;
   cashTransactions!: Table<CashTransaction>;
+  appSettings!: Table<AppSettings>;
 
   constructor() {
     super('AccountingAppDB');
@@ -91,6 +99,16 @@ export class AppDatabase extends Dexie {
       cashTransactions: '++id, transactionDate, type',
       purchaseInvoices: '++id, supplierId, invoiceDate',
       purchaseInvoiceItems: '++id, invoiceId',
+    });
+    this.version(4).stores({
+      customers: '++id, name',
+      suppliers: '++id, name',
+      saleInvoices: '++id, customerId, invoiceDate',
+      saleInvoiceItems: '++id, invoiceId',
+      cashTransactions: '++id, transactionDate, type',
+      purchaseInvoices: '++id, supplierId, invoiceDate',
+      purchaseInvoiceItems: '++id, invoiceId',
+      appSettings: 'id',
     });
   }
 }
