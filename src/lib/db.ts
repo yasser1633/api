@@ -17,6 +17,14 @@ export interface Supplier {
   balance: number;
 }
 
+export interface Item {
+  id?: number;
+  name: string;
+  purchasePrice: number;
+  salePrice: number;
+  quantity: number; // Quantity in stock
+}
+
 export interface SaleInvoice {
   id?: number;
   customerId: number;
@@ -73,6 +81,7 @@ export interface AppSettings {
 class MySubClassedDexie extends Dexie {
   customers!: Table<Customer>;
   suppliers!: Table<Supplier>;
+  items!: Table<Item>;
   saleInvoices!: Table<SaleInvoice>;
   saleInvoiceItems!: Table<SaleInvoiceItem>;
   purchaseInvoices!: Table<PurchaseInvoice>;
@@ -95,6 +104,9 @@ class MySubClassedDexie extends Dexie {
     this.version(3).stores({
       saleInvoices: '++id, customerId, invoiceDate, status',
       purchaseInvoices: '++id, supplierId, invoiceDate, status',
+    });
+    this.version(4).stores({
+      items: '++id, name',
     });
   }
 }

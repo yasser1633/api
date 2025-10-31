@@ -15,6 +15,7 @@ import PurchaseInvoiceDetail from "./pages/PurchaseInvoiceDetail";
 import EditPurchaseInvoice from "./pages/EditPurchaseInvoice";
 import Customers from "./pages/Customers";
 import Suppliers from "./pages/Suppliers";
+import Items from "./pages/Items";
 import Cash from "./pages/Cash";
 import Reports from "./pages/Reports";
 import SalesReport from "./pages/reports/SalesReport";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/purchases/:id/edit" element={<EditPurchaseInvoice />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/items" element={<Items />} />
             <Route path="/cash" element={<Cash />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/reports/sales" element={<SalesReport />} />

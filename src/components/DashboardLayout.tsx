@@ -9,6 +9,7 @@ import {
   PanelLeft,
   Package2,
   DollarSign,
+  Archive,
 } from "lucide-react";
 import {
   Tooltip,
@@ -25,6 +26,7 @@ const navLinks = [
   { to: "/", icon: Home, label: "الرئيسية" },
   { to: "/sales", icon: ShoppingCart, label: "المبيعات" },
   { to: "/purchases", icon: Package, label: "المشتريات" },
+  { to: "/items", icon: Archive, label: "المواد" },
   { to: "/customers", icon: Users, label: "العملاء" },
   { to: "/suppliers", icon: Users, label: "الموردون" },
   { to: "/cash", icon: DollarSign, label: "الخزينة" },
