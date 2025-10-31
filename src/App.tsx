@@ -3,7 +3,19 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import DashboardLayout from "@/components/DashboardLayout";
+import Dashboard from "./pages/Dashboard";
+import Sales from "./pages/Sales";
+import NewSaleInvoice from "./pages/NewSaleInvoice";
+import SaleInvoiceDetail from "./pages/SaleInvoiceDetail";
+import Purchases from "./pages/Purchases";
+import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
+import PurchaseInvoiceDetail from "./pages/PurchaseInvoiceDetail";
+import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
+import Cash from "./pages/Cash";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,8 +27,20 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route element={<DashboardLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/sales" element={<Sales />} />
+            <Route path="/sales/new" element={<NewSaleInvoice />} />
+            <Route path="/sales/:id" element={<SaleInvoiceDetail />} />
+            <Route path="/purchases" element={<Purchases />} />
+            <Route path="/purchases/new" element={<NewPurchaseInvoice />} />
+            <Route path="/purchases/:id" element={<PurchaseInvoiceDetail />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/suppliers" element={<Suppliers />} />
+            <Route path="/cash" element={<Cash />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

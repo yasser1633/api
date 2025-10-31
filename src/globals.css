@@ -99,3 +99,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  .print-hidden {
+    display: none;
+  }
+  .printable-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  body {
+    background-color: white !important;
+  }
+}
