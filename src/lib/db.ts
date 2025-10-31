@@ -92,6 +92,10 @@ class MySubClassedDexie extends Dexie {
       cashTransactions: '++id, date, type, [partyType+partyId]',
       appSettings: 'id',
     });
+    this.version(3).stores({
+      saleInvoices: '++id, customerId, invoiceDate, status',
+      purchaseInvoices: '++id, supplierId, invoiceDate, status',
+    });
   }
 }
 
