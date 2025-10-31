@@ -1,7 +1,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, ShoppingCart, Package, ArrowUp, ArrowDown } from "lucide-react";
 import { db } from "@/lib/db";
+import DashboardChart from "@/components/DashboardChart";
 
 const Dashboard = () => {
   const stats = useLiveQuery(async () => {
@@ -29,85 +30,98 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">إجمالي المبيعات</CardTitle>
-          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">إجمالي المبيعات</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.totalSales.toFixed(2) || "0.00"} ر.س
+            </div>
+            <p className="text-xs text-muted-foreground">
+              إجمالي قيمة فواتير المبيعات
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">الذمم الدائنة (للموردين)</CardTitle>
+            <ArrowDown className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.totalPayables.toFixed(2) || "0.00"} ر.س
+            </div>
+            <p className="text-xs text-muted-foreground">
+              المبالغ المتبقية لفواتير المشتريات
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">الذمم المدينة (من العملاء)</CardTitle>
+            <ArrowUp className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.totalReceivables.toFixed(2) || "0.00"} ر.س
+            </div>
+            <p className="text-xs text-muted-foreground">
+              المبالغ المتبقية من فواتير المبيعات
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">إجمالي المشتريات</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.totalPurchases.toFixed(2) || "0.00"} ر.س
+            </div>
+            <p className="text-xs text-muted-foreground">
+              إجمالي قيمة فواتير المشتريات
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">العملاء</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+{stats?.totalCustomers || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              إجمالي عدد العملاء المسجلين
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">الموردون</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+{stats?.totalSuppliers || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              إجمالي عدد الموردين المسجلين
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      <Card className="col-span-1 lg:col-span-2">
+        <CardHeader>
+          <CardTitle>نظرة عامة</CardTitle>
+          <CardDescription>
+            مقارنة بين المبيعات والمشتريات خلال آخر 6 أشهر.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {stats?.totalSales.toFixed(2) || "0.00"} ر.س
-          </div>
-          <p className="text-xs text-muted-foreground">
-            إجمالي قيمة فواتير المبيعات
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">الذمم الدائنة (للموردين)</CardTitle>
-          <ArrowDown className="h-4 w-4 text-red-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {stats?.totalPayables.toFixed(2) || "0.00"} ر.س
-          </div>
-          <p className="text-xs text-muted-foreground">
-            المبالغ المتبقية لفواتير المشتريات
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">الذمم المدينة (من العملاء)</CardTitle>
-          <ArrowUp className="h-4 w-4 text-green-500" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {stats?.totalReceivables.toFixed(2) || "0.00"} ر.س
-          </div>
-          <p className="text-xs text-muted-foreground">
-            المبالغ المتبقية من فواتير المبيعات
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">إجمالي المشتريات</CardTitle>
-          <Package className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {stats?.totalPurchases.toFixed(2) || "0.00"} ر.س
-          </div>
-          <p className="text-xs text-muted-foreground">
-            إجمالي قيمة فواتير المشتريات
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">العملاء</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">+{stats?.totalCustomers || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            إجمالي عدد العملاء المسجلين
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">الموردون</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">+{stats?.totalSuppliers || 0}</div>
-          <p className="text-xs text-muted-foreground">
-            إجمالي عدد الموردين المسجلين
-          </p>
+        <CardContent className="pl-2">
+          <DashboardChart />
         </CardContent>
       </Card>
     </div>
