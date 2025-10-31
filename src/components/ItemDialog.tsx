@@ -20,11 +20,13 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { db, Item } from "@/lib/db";
 import { showError, showSuccess } from "@/utils/toast";
 
 const itemSchema = z.object({
   name: z.string().min(2, { message: "اسم المادة مطلوب." }),
+  description: z.string().optional(),
   purchasePrice: z.coerce.number().min(0, { message: "سعر الشراء يجب أن يكون رقماً موجباً." }),
   salePrice: z.coerce.number().min(0, { message: "سعر البيع يجب أن يكون رقماً موجباً." }),
   quantity: z.coerce.number().min(0, { message: "الكمية يجب أن تكون رقماً موجباً." }),
@@ -43,6 +45,7 @@ const ItemDialog: React.FC<ItemDialogProps> = ({ item, isOpen, onClose }) => {
     resolver: zodResolver(itemSchema),
     defaultValues: {
       name: "",
+      description: "",
       purchasePrice: 0,
       salePrice: 0,
       quantity: 0,
@@ -55,6 +58,7 @@ const ItemDialog: React.FC<ItemDialogProps> = ({ item, isOpen, onClose }) => {
     } else {
       form.reset({
         name: "",
+        description: "",
         purchasePrice: 0,
         salePrice: 0,
         quantity: 0,
@@ -97,6 +101,19 @@ const ItemDialog: React.FC<ItemDialogProps> = ({ item, isOpen, onClose }) => {
                   <FormLabel>اسم المادة</FormLabel>
                   <FormControl>
                     <Input placeholder="اسم الصنف أو المنتج" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>الوصف (اختياري)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="وصف تفصيلي للمادة" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

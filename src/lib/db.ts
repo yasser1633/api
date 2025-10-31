@@ -20,6 +20,7 @@ export interface Supplier {
 export interface Item {
   id?: number;
   name: string;
+  description?: string;
   purchasePrice: number;
   salePrice: number;
   quantity: number; // Quantity in stock

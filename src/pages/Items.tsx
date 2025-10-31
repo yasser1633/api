@@ -87,6 +87,7 @@ const Items = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>اسم المادة</TableHead>
+                <TableHead>الوصف</TableHead>
                 <TableHead className="text-left">سعر الشراء (ر.س)</TableHead>
                 <TableHead className="text-left">سعر البيع (ر.س)</TableHead>
                 <TableHead className="text-left">الكمية في المخزون</TableHead>
@@ -101,6 +102,7 @@ const Items = () => {
                   items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.description || "-"}</TableCell>
                       <TableCell className="text-left font-mono">{item.purchasePrice.toFixed(2)}</TableCell>
                       <TableCell className="text-left font-mono">{item.salePrice.toFixed(2)}</TableCell>
                       <TableCell className="text-left font-mono">{item.quantity}</TableCell>
@@ -130,14 +132,14 @@ const Items = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       لا يوجد مواد. ابدأ بإضافة مادة جديدة.
                     </TableCell>
                   </TableRow>
                 )
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
