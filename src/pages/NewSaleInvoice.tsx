@@ -29,11 +29,13 @@ import {
 } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Separator } from "@/components/ui/separator";
-import { db } from "@/lib/db";
+import { db, Item } from "@/lib/db";
 import { showError, showSuccess } from "@/utils/toast";
+import { ItemCombobox } from "@/components/ItemCombobox";
 
 interface InvoiceItem {
   id: number;
+  itemId?: number;
   description: string;
   quantity: number;
   price: number;
@@ -42,6 +44,7 @@ interface InvoiceItem {
 const NewSaleInvoice = () => {
   const navigate = useNavigate();
   const customers = useLiveQuery(() => db.customers.toArray());
+  const itemsList = useLiveQuery(() => db.items.toArray());
 
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<
     number | undefined
@@ -70,8 +73,31 @@ const NewSaleInvoice = () => {
     value: string | number
   ) => {
     setItems(
+      items.map((item) => {
+        if (item.id === id) {
+          const updatedItem = { ...item, [field]: value };
+          // If description is changed manually, unlink from item
+          if (field === 'description') {
+            updatedItem.itemId = undefined;
+          }
+          return updatedItem;
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleItemSelect = (rowId: number, selectedItem: Item) => {
+    setItems(
       items.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
+        item.id === rowId
+          ? {
+              ...item,
+              itemId: selectedItem.id,
+              description: selectedItem.name,
+              price: selectedItem.salePrice,
+            }
+          : item
       )
     );
   };
@@ -120,6 +146,7 @@ const NewSaleInvoice = () => {
           // 2. Add SaleInvoiceItems
           const invoiceItems = items.map((item) => ({
             invoiceId: invoiceId,
+            itemId: item.itemId,
             description: item.description,
             quantity: item.quantity,
             price: item.price,
@@ -228,16 +255,11 @@ const NewSaleInvoice = () => {
                   {items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <Input
+                        <ItemCombobox
+                          items={itemsList || []}
                           value={item.description}
-                          onChange={(e) =>
-                            handleItemChange(
-                              item.id,
-                              "description",
-                              e.target.value
-                            )
-                          }
-                          placeholder="وصف المنتج أو الخدمة"
+                          onValueChange={(value) => handleItemChange(item.id, "description", value)}
+                          onItemSelect={(selectedItem) => handleItemSelect(item.id, selectedItem)}
                         />
                       </TableCell>
                       <TableCell>

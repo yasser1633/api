@@ -38,6 +38,7 @@ export interface SaleInvoice {
 export interface SaleInvoiceItem {
   id?: number;
   invoiceId: number;
+  itemId?: number;
   description: string;
   quantity: number;
   price: number;
@@ -55,6 +56,7 @@ export interface PurchaseInvoice {
 export interface PurchaseInvoiceItem {
   id?: number;
   invoiceId: number;
+  itemId?: number;
   description: string;
   quantity: number;
   price: number;
@@ -108,6 +110,10 @@ class MySubClassedDexie extends Dexie {
     });
     this.version(4).stores({
       items: '++id, name',
+    });
+    this.version(5).stores({
+      saleInvoiceItems: '++id, invoiceId, itemId',
+      purchaseInvoiceItems: '++id, invoiceId, itemId',
     });
   }
 }
