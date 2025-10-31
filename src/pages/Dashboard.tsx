@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Users, ShoppingCart, Package, ArrowUp, ArrowDown } from "lucide-react";
 import { db } from "@/lib/db";
 import DashboardChart from "@/components/DashboardChart";
+import RecentInvoices from "@/components/RecentInvoices";
 
 const Dashboard = () => {
-  const stats = useLiveQuery(async () => {
+  const dashboardData = useLiveQuery(async () => {
+    // Stats
     const totalCustomers = await db.customers.count();
     const totalSuppliers = await db.suppliers.count();
     
@@ -19,13 +21,35 @@ const Dashboard = () => {
     const totalPaidToSuppliers = purchaseInvoices.reduce((sum, inv) => sum + inv.paidAmount, 0);
     const totalPayables = totalPurchases - totalPaidToSuppliers;
 
+    // Recent Unpaid Invoices
+    const customersMap = new Map((await db.customers.toArray()).map(c => [c.id, c.name]));
+    const suppliersMap = new Map((await db.suppliers.toArray()).map(s => [s.id, s.name]));
+
+    const recentUnpaidSales = (await db.saleInvoices
+      .where('status').notEqual('مدفوعة')
+      .reverse()
+      .limit(5)
+      .toArray())
+      .map(inv => ({ ...inv, partyName: customersMap.get(inv.customerId) || 'عميل محذوف' }));
+
+    const recentUnpaidPurchases = (await db.purchaseInvoices
+      .where('status').notEqual('مدفوعة')
+      .reverse()
+      .limit(5)
+      .toArray())
+      .map(inv => ({ ...inv, partyName: suppliersMap.get(inv.supplierId) || 'مورد محذوف' }));
+
     return {
-      totalCustomers,
-      totalSuppliers,
-      totalSales,
-      totalReceivables,
-      totalPurchases,
-      totalPayables,
+      stats: {
+        totalCustomers,
+        totalSuppliers,
+        totalSales,
+        totalReceivables,
+        totalPurchases,
+        totalPayables,
+      },
+      recentUnpaidSales,
+      recentUnpaidPurchases,
     };
   });
 
@@ -39,7 +63,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.totalSales.toFixed(2) || "0.00"} ر.س
+              {dashboardData?.stats.totalSales.toFixed(2) || "0.00"} ر.س
             </div>
             <p className="text-xs text-muted-foreground">
               إجمالي قيمة فواتير المبيعات
@@ -53,7 +77,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.totalPayables.toFixed(2) || "0.00"} ر.س
+              {dashboardData?.stats.totalPayables.toFixed(2) || "0.00"} ر.س
             </div>
             <p className="text-xs text-muted-foreground">
               المبالغ المتبقية لفواتير المشتريات
@@ -67,7 +91,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.totalReceivables.toFixed(2) || "0.00"} ر.س
+              {dashboardData?.stats.totalReceivables.toFixed(2) || "0.00"} ر.س
             </div>
             <p className="text-xs text-muted-foreground">
               المبالغ المتبقية من فواتير المبيعات
@@ -81,7 +105,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.totalPurchases.toFixed(2) || "0.00"} ر.س
+              {dashboardData?.stats.totalPurchases.toFixed(2) || "0.00"} ر.س
             </div>
             <p className="text-xs text-muted-foreground">
               إجمالي قيمة فواتير المشتريات
@@ -94,7 +118,7 @@ const Dashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{stats?.totalCustomers || 0}</div>
+            <div className="text-2xl font-bold">+{dashboardData?.stats.totalCustomers || 0}</div>
             <p className="text-xs text-muted-foreground">
               إجمالي عدد العملاء المسجلين
             </p>
@@ -106,24 +130,42 @@ const Dashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{stats?.totalSuppliers || 0}</div>
+            <div className="text-2xl font-bold">+{dashboardData?.stats.totalSuppliers || 0}</div>
             <p className="text-xs text-muted-foreground">
               إجمالي عدد الموردين المسجلين
             </p>
           </CardContent>
         </Card>
       </div>
-      <Card className="col-span-1 lg:col-span-2">
-        <CardHeader>
-          <CardTitle>نظرة عامة</CardTitle>
-          <CardDescription>
-            مقارنة بين المبيعات والمشتريات خلال آخر 6 أشهر.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pl-2">
-          <DashboardChart />
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-1 lg:col-span-4">
+          <CardHeader>
+            <CardTitle>نظرة عامة</CardTitle>
+            <CardDescription>
+              مقارنة بين المبيعات والمشتريات خلال آخر 6 أشهر.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <DashboardChart />
+          </CardContent>
+        </Card>
+        <div className="col-span-1 lg:col-span-3 flex flex-col gap-4">
+            <RecentInvoices 
+                title="فواتير مبيعات مستحقة"
+                description="أحدث فواتير المبيعات غير المدفوعة."
+                invoices={dashboardData?.recentUnpaidSales || []}
+                viewAllLink="/sales"
+                invoicePrefix="INV"
+            />
+            <RecentInvoices 
+                title="فواتير مشتريات مستحقة"
+                description="أحدث فواتير المشتريات غير المدفوعة."
+                invoices={dashboardData?.recentUnpaidPurchases || []}
+                viewAllLink="/purchases"
+                invoicePrefix="PUR"
+            />
+        </div>
+      </div>
     </div>
   );
 };
