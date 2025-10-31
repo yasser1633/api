@@ -21,6 +21,12 @@ const reportLinks = [
     title: "كشف حساب عميل",
     description: "عرض كشف حساب مفصل لعميل محدد.",
   },
+  {
+    to: "/reports/supplier-statement",
+    icon: Package,
+    title: "كشف حساب مورد",
+    description: "عرض كشف حساب مفصل لمورد محدد.",
+  },
   // Future reports can be added here
   // {
   //   to: "/reports/purchases",
