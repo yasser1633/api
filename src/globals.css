@@ -99,32 +99,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-@media print {
-  .print-hidden {
-    display: none;
-  }
-
-  body * {
-    visibility: hidden;
-  }
-
-  #printable, #printable * {
-    visibility: visible;
-  }
-
-  #printable {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 1rem;
-    font-size: 12px;
-  }
-  
-  .printable-card {
-      box-shadow: none !important;
-      border: none !important;
-  }
-}

@@ -3,22 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Layout from "./components/Layout";
-import Dashboard from "./pages/Dashboard";
-import Sales from "./pages/Sales";
-import Purchases from "./pages/Purchases";
-import Cash from "./pages/Cash";
-import Customers from "./pages/Customers";
-import Suppliers from "./pages/Suppliers";
-import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
-import NewSaleInvoice from "./pages/NewSaleInvoice";
-import NewPurchaseInvoice from "./pages/NewPurchaseInvoice";
-import SaleInvoiceDetail from "./pages/SaleInvoiceDetail";
-import EditSaleInvoice from "./pages/EditSaleInvoice";
-import PurchaseInvoiceDetail from "./pages/PurchaseInvoiceDetail";
-import EditPurchaseInvoice from "./pages/EditPurchaseInvoice";
 
 const queryClient = new QueryClient();
 
@@ -29,22 +15,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/sales" element={<Sales />} />
-            <Route path="/sales/new" element={<NewSaleInvoice />} />
-            <Route path="/sales/:id" element={<SaleInvoiceDetail />} />
-            <Route path="/sales/:id/edit" element={<EditSaleInvoice />} />
-            <Route path="/purchases" element={<Purchases />} />
-            <Route path="/purchases/new" element={<NewPurchaseInvoice />} />
-            <Route path="/purchases/:id" element={<PurchaseInvoiceDetail />} />
-            <Route path="/purchases/:id/edit" element={<EditPurchaseInvoice />} />
-            <Route path="/cash" element={<Cash />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/suppliers" element={<Suppliers />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
+          <Route path="/" element={<Index />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
