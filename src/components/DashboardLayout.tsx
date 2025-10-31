@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -69,6 +70,8 @@ const NavLinkWrapper = ({ to, icon: Icon, label, isMobile = false }) => {
 };
 
 const DashboardLayout = () => {
+  const location = useLocation();
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40" dir="rtl">
       <aside className="fixed inset-y-0 right-0 z-10 hidden w-14 flex-col border-l bg-background sm:flex">
@@ -135,6 +138,26 @@ const DashboardLayout = () => {
             </SheetContent>
           </Sheet>
         </header>
+        <div className="px-4 sm:px-6">
+          <ScrollArea className="w-full whitespace-nowrap rounded-md">
+            <div className="flex w-max space-x-2 space-x-reverse pb-4">
+              {[...navLinks, { to: "/settings", icon: Settings, label: "الإعدادات" }].map((link) => (
+                <Button
+                  key={link.to}
+                  asChild
+                  variant={location.pathname.startsWith(link.to) && link.to !== '/' || location.pathname === link.to ? "secondary" : "ghost"}
+                  className="gap-2"
+                >
+                  <Link to={link.to}>
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
         <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
           <Outlet />
         </main>
