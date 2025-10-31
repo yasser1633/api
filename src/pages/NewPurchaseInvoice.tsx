@@ -132,6 +132,7 @@ const NewPurchaseInvoice = () => {
         db.purchaseInvoices,
         db.purchaseInvoiceItems,
         db.suppliers,
+        db.items,
         async () => {
           const invoiceId = await db.purchaseInvoices.add({
             supplierId: selectedSupplierId,
@@ -154,6 +155,15 @@ const NewPurchaseInvoice = () => {
           if (supplier) {
             const newBalance = (supplier.balance || 0) + total;
             await db.suppliers.update(selectedSupplierId, { balance: newBalance });
+          }
+
+          // Update item quantities in stock
+          for (const item of invoiceItems) {
+            if (item.itemId) {
+              await db.items.where({ id: item.itemId }).modify(i => {
+                i.quantity += item.quantity;
+              });
+            }
           }
         }
       );

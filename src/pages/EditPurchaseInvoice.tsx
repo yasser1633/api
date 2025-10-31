@@ -29,14 +29,11 @@ import {
 } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Separator } from "@/components/ui/separator";
-import { db, PurchaseInvoice } from "@/lib/db";
+import { db, PurchaseInvoice, PurchaseInvoiceItem } from "@/lib/db";
 import { showError, showSuccess } from "@/utils/toast";
 
-interface InvoiceItem {
+interface InvoiceItem extends PurchaseInvoiceItem {
   id: number;
-  description: string;
-  quantity: number;
-  price: number;
 }
 
 const EditPurchaseInvoice = () => {
@@ -46,6 +43,7 @@ const EditPurchaseInvoice = () => {
 
   const suppliers = useLiveQuery(() => db.suppliers.toArray());
   const [originalInvoice, setOriginalInvoice] = React.useState<PurchaseInvoice | null>(null);
+  const [originalItems, setOriginalItems] = React.useState<PurchaseInvoiceItem[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = React.useState<number | undefined>();
   const [items, setItems] = React.useState<InvoiceItem[]>([]);
   const [invoiceDate, setInvoiceDate] = React.useState<Date | undefined>();
@@ -60,6 +58,7 @@ const EditPurchaseInvoice = () => {
         const invoiceItems = await db.purchaseInvoiceItems.where({ invoiceId }).toArray();
         if (invoice && invoiceItems) {
           setOriginalInvoice(invoice);
+          setOriginalItems(invoiceItems);
           setSelectedSupplierId(invoice.supplierId);
           setInvoiceDate(invoice.invoiceDate);
           setItems(invoiceItems.map(item => ({ ...item, id: item.id! })));
@@ -76,7 +75,7 @@ const EditPurchaseInvoice = () => {
   }, [invoiceId, navigate]);
 
   const handleAddItem = () => {
-    setItems([...items, { id: Date.now(), description: "", quantity: 1, price: 0 }]);
+    setItems([...items, { id: Date.now(), description: "", quantity: 1, price: 0, invoiceId: invoiceId }]);
   };
 
   const handleRemoveItem = (id: number) => {
@@ -102,7 +101,7 @@ const EditPurchaseInvoice = () => {
     }
 
     try {
-      await db.transaction("rw", db.purchaseInvoices, db.purchaseInvoiceItems, db.suppliers, async () => {
+      await db.transaction("rw", db.purchaseInvoices, db.purchaseInvoiceItems, db.suppliers, db.items, async () => {
         const originalTotal = originalInvoice.total;
         const newTotal = total;
         const paidAmount = originalInvoice.paidAmount;
@@ -113,6 +112,23 @@ const EditPurchaseInvoice = () => {
         } else {
             const difference = newTotal - originalTotal;
             await db.suppliers.where({ id: selectedSupplierId }).modify(s => { s.balance += difference });
+        }
+
+        // Update item quantities in stock
+        const quantityChanges = new Map<number, number>();
+        originalItems.forEach(item => {
+          if (item.itemId) {
+            quantityChanges.set(item.itemId, (quantityChanges.get(item.itemId) || 0) - item.quantity);
+          }
+        });
+        items.forEach(item => {
+          if (item.itemId) {
+            quantityChanges.set(item.itemId, (quantityChanges.get(item.itemId) || 0) + item.quantity);
+          }
+        });
+
+        for (const [itemId, change] of quantityChanges.entries()) {
+          await db.items.where({ id: itemId }).modify(i => { i.quantity += change });
         }
 
         const newStatus = paidAmount >= newTotal ? 'مدفوعة' : paidAmount > 0 ? 'مدفوعة جزئياً' : 'غير مدفوعة';

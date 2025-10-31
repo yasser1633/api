@@ -29,14 +29,11 @@ import {
 } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Separator } from "@/components/ui/separator";
-import { db, SaleInvoice } from "@/lib/db";
+import { db, SaleInvoice, SaleInvoiceItem } from "@/lib/db";
 import { showError, showSuccess } from "@/utils/toast";
 
-interface InvoiceItem {
+interface InvoiceItem extends SaleInvoiceItem {
   id: number;
-  description: string;
-  quantity: number;
-  price: number;
 }
 
 const EditSaleInvoice = () => {
@@ -46,6 +43,7 @@ const EditSaleInvoice = () => {
 
   const customers = useLiveQuery(() => db.customers.toArray());
   const [originalInvoice, setOriginalInvoice] = React.useState<SaleInvoice | null>(null);
+  const [originalItems, setOriginalItems] = React.useState<SaleInvoiceItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = React.useState<number | undefined>();
   const [items, setItems] = React.useState<InvoiceItem[]>([]);
   const [invoiceDate, setInvoiceDate] = React.useState<Date | undefined>();
@@ -60,6 +58,7 @@ const EditSaleInvoice = () => {
         const invoiceItems = await db.saleInvoiceItems.where({ invoiceId }).toArray();
         if (invoice && invoiceItems) {
           setOriginalInvoice(invoice);
+          setOriginalItems(invoiceItems);
           setSelectedCustomerId(invoice.customerId);
           setInvoiceDate(invoice.invoiceDate);
           setItems(invoiceItems.map(item => ({ ...item, id: item.id! })));
@@ -76,7 +75,7 @@ const EditSaleInvoice = () => {
   }, [invoiceId, navigate]);
 
   const handleAddItem = () => {
-    setItems([...items, { id: Date.now(), description: "", quantity: 1, price: 0 }]);
+    setItems([...items, { id: Date.now(), description: "", quantity: 1, price: 0, invoiceId: invoiceId }]);
   };
 
   const handleRemoveItem = (id: number) => {
@@ -101,8 +100,32 @@ const EditSaleInvoice = () => {
       return;
     }
 
+    // Stock validation
+    const quantityChanges = new Map<number, number>();
+    originalItems.forEach(item => {
+      if (item.itemId) {
+        quantityChanges.set(item.itemId, (quantityChanges.get(item.itemId) || 0) + item.quantity);
+      }
+    });
+    items.forEach(item => {
+      if (item.itemId) {
+        quantityChanges.set(item.itemId, (quantityChanges.get(item.itemId) || 0) - item.quantity);
+      }
+    });
+
+    for (const [itemId, change] of quantityChanges.entries()) {
+      if (change < 0) { // More items are being sold than before
+        const stockItem = await db.items.get(itemId);
+        if (!stockItem || stockItem.quantity < -change) {
+          const itemName = stockItem?.name || `ID: ${itemId}`;
+          showError(`لا توجد كمية كافية في المخزون للمادة "${itemName}". الكمية المطلوبة الإضافية: ${-change}, المتاح: ${stockItem?.quantity || 0}`);
+          return;
+        }
+      }
+    }
+
     try {
-      await db.transaction("rw", db.saleInvoices, db.saleInvoiceItems, db.customers, async () => {
+      await db.transaction("rw", db.saleInvoices, db.saleInvoiceItems, db.customers, db.items, async () => {
         // Calculate balance changes
         const originalTotal = originalInvoice.total;
         const newTotal = total;
@@ -115,6 +138,11 @@ const EditSaleInvoice = () => {
         } else {
             const difference = newTotal - originalTotal;
             await db.customers.where({ id: selectedCustomerId }).modify(c => { c.balance += difference });
+        }
+
+        // Update item quantities in stock
+        for (const [itemId, change] of quantityChanges.entries()) {
+          await db.items.where({ id: itemId }).modify(i => { i.quantity += change });
         }
 
         // Update invoice

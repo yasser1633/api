@@ -48,12 +48,22 @@ const Sales = () => {
 
   const handleDeleteInvoice = async (invoiceId: number | undefined) => {
     if (!invoiceId) return;
-    if (confirm("هل أنت متأكد من حذف هذه الفاتورة؟ سيتم حذف جميع الدفعات المرتبطة وتحديث رصيد العميل.")) {
+    if (confirm("هل أنت متأكد من حذف هذه الفاتورة؟ سيتم حذف جميع الدفعات المرتبطة وتحديث رصيد العميل وإرجاع الكميات للمخزون.")) {
       try {
-        await db.transaction("rw", db.saleInvoices, db.saleInvoiceItems, db.customers, db.cashTransactions, async () => {
+        await db.transaction("rw", db.saleInvoices, db.saleInvoiceItems, db.customers, db.cashTransactions, db.items, async () => {
           const invoiceToDelete = await db.saleInvoices.get(invoiceId);
           if (!invoiceToDelete) {
             throw new Error("Invoice not found");
+          }
+
+          // Revert item stock quantities
+          const itemsToRevert = await db.saleInvoiceItems.where({ invoiceId: invoiceId }).toArray();
+          for (const item of itemsToRevert) {
+            if (item.itemId) {
+              await db.items.where({ id: item.itemId }).modify(i => {
+                i.quantity += item.quantity;
+              });
+            }
           }
 
           // Revert customer balance

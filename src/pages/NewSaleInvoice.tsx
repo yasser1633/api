@@ -127,12 +127,24 @@ const NewSaleInvoice = () => {
       return;
     }
 
+    // Stock validation
+    for (const item of items) {
+      if (item.itemId) {
+        const stockItem = await db.items.get(item.itemId);
+        if (!stockItem || stockItem.quantity < item.quantity) {
+          showError(`لا توجد كمية كافية في المخزون للمادة "${item.description}". الكمية المتاحة: ${stockItem?.quantity || 0}`);
+          return;
+        }
+      }
+    }
+
     try {
       await db.transaction(
         "rw",
         db.saleInvoices,
         db.saleInvoiceItems,
         db.customers,
+        db.items,
         async () => {
           // 1. Add SaleInvoice
           const invoiceId = await db.saleInvoices.add({
@@ -158,6 +170,15 @@ const NewSaleInvoice = () => {
           if (customer) {
             const newBalance = (customer.balance || 0) + total;
             await db.customers.update(selectedCustomerId, { balance: newBalance });
+          }
+
+          // 4. Update item quantities in stock
+          for (const item of invoiceItems) {
+            if (item.itemId) {
+              await db.items.where({ id: item.itemId }).modify(i => {
+                i.quantity -= item.quantity;
+              });
+            }
           }
         }
       );
