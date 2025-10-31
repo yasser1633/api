@@ -15,18 +15,18 @@ const reportLinks = [
     title: "تقرير الأرباح والخسائر",
     description: "ملخص الإيرادات والتكاليف وصافي الربح.",
   },
+  {
+    to: "/reports/customer-statement",
+    icon: Users,
+    title: "كشف حساب عميل",
+    description: "عرض كشف حساب مفصل لعميل محدد.",
+  },
   // Future reports can be added here
   // {
   //   to: "/reports/purchases",
   //   icon: Package,
   //   title: "تقرير المشتريات",
   //   description: "عرض وتحليل فواتير المشتريات.",
-  // },
-  // {
-  //   to: "/reports/customer-statement",
-  //   icon: Users,
-  //   title: "كشف حساب عميل",
-  //   description: "عرض كشف حساب مفصل لعميل محدد.",
   // },
   // {
   //   to: "/reports/tax",
