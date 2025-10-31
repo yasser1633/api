@@ -82,14 +82,14 @@ class MySubClassedDexie extends Dexie {
 
   constructor() {
     super('accountingAppDB');
-    this.version(1).stores({
+    this.version(2).stores({
       customers: '++id, name',
       suppliers: '++id, name',
       saleInvoices: '++id, customerId, invoiceDate',
       saleInvoiceItems: '++id, invoiceId',
       purchaseInvoices: '++id, supplierId, invoiceDate',
       purchaseInvoiceItems: '++id, invoiceId',
-      cashTransactions: '++id, date, type',
+      cashTransactions: '++id, date, type, [partyType+partyId]',
       appSettings: 'id',
     });
   }
