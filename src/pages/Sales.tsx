@@ -81,12 +81,6 @@ const Sales = () => {
     }
   };
 
-  const getStatusVariant = (status) => {
-    if (status === 'مدفوعة') return 'success';
-    if (status === 'مدفوعة جزئياً') return 'warning';
-    return 'secondary';
-  };
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -137,7 +131,7 @@ const Sales = () => {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={getStatusVariant(invoice.status)}
+                          variant="secondary"
                            className={
                             invoice.status === "مدفوعة"
                               ? "bg-green-600 text-white hover:bg-green-700"
