@@ -27,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DatePicker } from "@/components/DatePicker";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { Separator } from "@/components/ui/separator";
 import { db } from "@/lib/db";
 import { showError, showSuccess } from "@/utils/toast";

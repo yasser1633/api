@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/DatePicker";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { db, SaleInvoice, PurchaseInvoice } from "@/lib/db";
 import { showError, showSuccess } from "@/utils/toast";
 
