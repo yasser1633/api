@@ -29,8 +29,9 @@ import {
 } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { Separator } from "@/components/ui/separator";
-import { db, PurchaseInvoice, PurchaseInvoiceItem } from "@/lib/db";
+import { db, PurchaseInvoice, PurchaseInvoiceItem, Item } from "@/lib/db";
 import { showError, showSuccess } from "@/utils/toast";
+import { ItemCombobox } from "@/components/ItemCombobox";
 
 interface InvoiceItem extends PurchaseInvoiceItem {
   id: number;
@@ -42,6 +43,7 @@ const EditPurchaseInvoice = () => {
   const navigate = useNavigate();
 
   const suppliers = useLiveQuery(() => db.suppliers.toArray());
+  const itemsList = useLiveQuery(() => db.items.toArray());
   const [originalInvoice, setOriginalInvoice] = React.useState<PurchaseInvoice | null>(null);
   const [originalItems, setOriginalItems] = React.useState<PurchaseInvoiceItem[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = React.useState<number | undefined>();
@@ -82,8 +84,32 @@ const EditPurchaseInvoice = () => {
     setItems(items.filter((item) => item.id !== id));
   };
 
-  const handleItemChange = (id: number, field: keyof Omit<InvoiceItem, "id">, value: string | number) => {
-    setItems(items.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+  const handleItemChange = (id: number, field: keyof Omit<InvoiceItem, "id" | "itemId">, value: string | number) => {
+    setItems(items.map((item) => {
+        if (item.id === id) {
+          const updatedItem = { ...item, [field]: value };
+          if (field === 'description') {
+            updatedItem.itemId = undefined;
+          }
+          return updatedItem;
+        }
+        return item;
+      }));
+  };
+
+  const handleItemSelect = (rowId: number, selectedItem: Item) => {
+    setItems(
+      items.map((item) =>
+        item.id === rowId
+          ? {
+              ...item,
+              itemId: selectedItem.id,
+              description: selectedItem.name,
+              price: selectedItem.purchasePrice,
+            }
+          : item
+      )
+    );
   };
 
   const subtotal = items.reduce((total, item) => total + item.quantity * item.price, 0);
@@ -114,7 +140,6 @@ const EditPurchaseInvoice = () => {
             await db.suppliers.where({ id: selectedSupplierId }).modify(s => { s.balance += difference });
         }
 
-        // Update item quantities in stock
         const quantityChanges = new Map<number, number>();
         originalItems.forEach(item => {
           if (item.itemId) {
@@ -207,7 +232,14 @@ const EditPurchaseInvoice = () => {
                 <TableBody>
                   {items.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell><Input value={item.description} onChange={(e) => handleItemChange(item.id, "description", e.target.value)} /></TableCell>
+                      <TableCell>
+                        <ItemCombobox
+                          items={itemsList || []}
+                          value={item.description}
+                          onValueChange={(value) => handleItemChange(item.id, "description", value)}
+                          onItemSelect={(selectedItem) => handleItemSelect(item.id, selectedItem)}
+                        />
+                      </TableCell>
                       <TableCell><Input type="number" value={item.quantity} onChange={(e) => handleItemChange(item.id, "quantity", parseInt(e.target.value) || 0)} min="1" /></TableCell>
                       <TableCell><Input type="number" value={item.price} onChange={(e) => handleItemChange(item.id, "price", parseFloat(e.target.value) || 0)} className="text-left" min="0" /></TableCell>
                       <TableCell className="text-left">{(item.quantity * item.price).toFixed(2)}</TableCell>
